@@ -22,18 +22,34 @@ All workflows are located under `.github/workflows/`:
 | :--- | :--- | :--- | :--- |
 | `frontend-ci.yaml` | `Frontend Continuous Integration` | `pull_request` on `starter/frontend/**`, `workflow_dispatch` | Runs linting and tests in parallel, then builds the Docker image. |
 | `backend-ci.yaml` | `Backend Continuous Integration` | `pull_request` on `starter/backend/**`, `workflow_dispatch` | Runs flake8 linting and pytest in parallel, then builds the Docker image. |
-| `frontend-cd.yaml` | `Frontend Continuous Deployment` | `push` (merge) to `main` on `starter/frontend/**`, `workflow_dispatch` | Runs lint/test, builds Docker image with `REACT_APP_MOVIE_API_URL`, tags with commit SHA, pushes to ECR, and deploys via Kustomize to EKS. |
-| `backend-cd.yaml` | `Backend Continuous Deployment` | `push` (merge) to `main` on `starter/backend/**`, `workflow_dispatch` | Runs lint/test, builds Docker image, tags with commit SHA, pushes to ECR, and deploys via Kustomize to EKS. |
+| `frontend-cd.yaml` | `Frontend Continuous Deployment` | `push` (merge) to `main` on `starter/frontend/**`, `workflow_dispatch` | Runs lint/test, builds Docker image with `REACT_APP_MOVIE_API_URL`, tags with commit SHA, pushes to ECR, and deploys via Kustomize to EKS with rollout verification. |
+| `backend-cd.yaml` | `Backend Continuous Deployment` | `push` (merge) to `main` on `starter/backend/**`, `workflow_dispatch` | Runs lint/test, builds Docker image, tags with commit SHA, pushes to ECR, and deploys via Kustomize to EKS with rollout verification. |
 
 ### Pipeline Highlights
 - **Parallel Execution**: Linting and testing run concurrently to minimize pipeline execution time.
-- **Dependency Control**: Build and deployment stages utilize `needs: [lint, test]` to prevent invalid code from being built or deployed.
+- **Quality Gates**: Build and deployment stages utilize `needs: [lint, test]` so broken code is never built or deployed.
+- **Rollout Verification**: CD workflows explicitly verify deployment health using `kubectl rollout status`.
 - **Secure Secret Handling**: AWS credentials are injected securely through GitHub Secrets.
 - **Immutable Tagging**: Images are tagged with `${{ github.sha }}` for version traceability.
 
 ---
 
-## 3. Required GitHub Secrets
+## 3. Verification & Deployment Screenshots
+
+The application deployments and pipeline runs have been verified:
+
+### 1. GitHub Actions Workflows (All Passing)
+![GitHub Actions Workflows](screenshots/screenshot_actions.png)
+
+### 2. Live Frontend Movie Catalog UI
+![Frontend UI](screenshots/screenshot_frontend.png)
+
+### 3. Live Backend `/movies` API Endpoint
+![Backend API](screenshots/screenshot_backend.png)
+
+---
+
+## 4. Required GitHub Secrets
 
 To allow GitHub Actions to interact with your AWS environment, configure the following secrets in **Settings > Secrets and variables > Actions**:
 
@@ -47,7 +63,7 @@ To allow GitHub Actions to interact with your AWS environment, configure the fol
 
 ---
 
-## 4. Local Development and Verification
+## 5. Local Development and Verification
 
 ### Frontend
 ```bash
@@ -67,7 +83,7 @@ pipenv run test
 
 ---
 
-## 5. Teardown Instructions
+## 6. Teardown Instructions
 
 To avoid incurring cloud charges, tear down all provisioned resources after project verification:
 ```bash
